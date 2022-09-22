@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "name": "view_plans",
+    "info": "Users can edit anything"
+  },
+  {
+    "id": 2,
+    "name": "view_page",
+    "info": "Users can edit anything"
+  }
+]

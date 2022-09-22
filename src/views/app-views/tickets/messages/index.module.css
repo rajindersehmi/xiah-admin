@@ -1,0 +1,14 @@
+.messageCont {
+  max-height: 400px;
+  margin-bottom: 10px;
+  overflow-y: scroll;
+}
+
+.messageCont::-webkit-scrollbar {
+  width: 5px;
+}
+
+.messageCont::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}

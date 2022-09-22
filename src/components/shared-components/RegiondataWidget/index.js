@@ -1,0 +1,193 @@
+import { Badge, Card, Col, Grid, Row } from "antd";
+import WorldMap from "assets/maps/world-countries-sans-antarctica.json";
+import PropTypes from "prop-types";
+import React, { useState } from "react";
+import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import ReactTooltip from "react-tooltip";
+import utils from "utils";
+
+const randomColor = (index) => {
+  return (
+    "#" +
+    Math.floor(index * 0.0008 * 16777215)
+      .toString(16)
+      .padStart(6, "0")
+      .toUpperCase()
+  );
+};
+
+const { useBreakpoint } = Grid;
+const geoUrl = WorldMap;
+const mapColor = "#F5F4F6";
+const hoverPercentage = -10;
+
+const getHighlightedRegion = (name, data, regionColor) => {
+  if (data.length > 0 || name) {
+    for (let i = 0; i < data.length; i++) {
+      const elm = data[i];
+      if (name === elm.country) {
+        return randomColor(i + 1);
+      }
+    }
+    return mapColor;
+  }
+  return mapColor;
+};
+
+const getRegionHoverColor = (name, data) => {
+  if (data.length > 0 || name) {
+    for (let i = 0; i < data.length; i++) {
+      const elm = data[i];
+      if (name === elm.country) {
+        return utils.shadeColor(randomColor(i + 1), hoverPercentage);
+      }
+    }
+    return utils.shadeColor(mapColor, hoverPercentage);
+  }
+  return utils.shadeColor(mapColor, hoverPercentage);
+};
+
+const getRegionValue = (name, data) => {
+  if (data.length > 0 || name) {
+    for (let i = 0; i < data.length; i++) {
+      const elm = data[i];
+      if (name === elm.country) {
+        return `${elm.country} — ${elm.sessions}`;
+      }
+    }
+    return "";
+  }
+  return "";
+};
+
+const MapChart = ({
+  setTooltipContent,
+  data,
+  mapSource,
+  mapType,
+  regionColor,
+}) => {
+  return (
+    <ComposableMap
+      style={{
+        transform: `${mapType === "world" ? "translateY(20px)" : "none"}`,
+      }}
+      data-tip=""
+      height={380}
+      projectionConfig={{ scale: 145 }}
+    >
+      <Geographies geography={mapSource}>
+        {({ geographies }) =>
+          geographies.map((geo) => {
+            const geoName =
+              mapType === "world" ? geo.properties.name : geo.properties.NAME_1;
+            return (
+              <Geography
+                key={geo.rsmKey}
+                geography={geo}
+                onMouseEnter={() => {
+                  setTooltipContent(getRegionValue(geoName, data));
+                }}
+                onMouseLeave={() => {
+                  setTooltipContent("");
+                }}
+                fill={getHighlightedRegion(geoName, data, regionColor)}
+                stroke="#D6D6DA"
+                style={{
+                  hover: {
+                    fill: getRegionHoverColor(geoName, data, regionColor),
+                    outline: "none",
+                  },
+                }}
+              />
+            );
+          })
+        }
+      </Geographies>
+    </ComposableMap>
+  );
+};
+
+const Map = (props) => {
+  const { data, mapSource, mapType, regionColor } = props;
+  const [content, setContent] = useState("");
+  return (
+    <>
+      <MapChart
+        regionColor={regionColor}
+        data={data}
+        mapSource={mapSource}
+        mapType={mapType}
+        setTooltipContent={setContent}
+      />
+      <ReactTooltip>{content}</ReactTooltip>
+    </>
+  );
+};
+
+const renderDataList = (data) => {
+  const list = data.map((elm, index) => (
+    <div
+      className="d-flex align-items-center justify-content-between mb-3"
+      key={elm.country}
+    >
+      <div>
+        <Badge color={randomColor(index + 1)} />
+        <span className="text-gray-light">{elm.country}</span>
+      </div>
+      <span className="font-weight-bold text-dark">{elm.sessions}</span>
+    </div>
+  ));
+  return list;
+};
+
+export const RegiondataWidget = (props) => {
+  const { data, mapSource, mapType, title, content, list, regionColor } = props;
+
+  const isMobile = !utils.getBreakPoint(useBreakpoint()).includes("lg");
+  return (
+    <Card bodyStyle={{ padding: 0 }}>
+      <Row>
+        <Col xs={24} sm={24} md={24} lg={7} className="border-right">
+          <div className="d-flex flex-column p-3 justify-content-between h-100">
+            <div>{title && <h4 className="font-weight-bold">{title}</h4>}</div>
+            <div>{content}</div>
+            <div>{list ? list : renderDataList(data)}</div>
+          </div>
+        </Col>
+        <Col xs={24} sm={24} md={24} lg={17}>
+          <div
+            className="d-flex flex-column justify-content-center"
+            style={{ minHeight: isMobile ? 200 : 435 }}
+          >
+            <div className="p-3 w-100">
+              <Map
+                regionColor={regionColor}
+                data={data}
+                mapSource={mapSource}
+                mapType={mapType}
+              />
+            </div>
+          </div>
+        </Col>
+      </Row>
+    </Card>
+  );
+};
+
+RegiondataWidget.propTypes = {
+  title: PropTypes.string,
+  data: PropTypes.array,
+  mapSource: PropTypes.object,
+  mapType: PropTypes.string,
+  content: PropTypes.element,
+  list: PropTypes.element,
+};
+
+RegiondataWidget.defaultProps = {
+  data: [],
+  mapSource: geoUrl,
+  mapType: "world",
+};
+
+export default RegiondataWidget;
